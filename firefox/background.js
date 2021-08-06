@@ -1,28 +1,23 @@
 const REGEX = new RegExp('https:\/\/.+\/.+m3u8$')
-const FOUND_URLS = new Set()
+const FOUND_URLS = {}
 
 function logURL(requestDetails) {
     const matches = REGEX.test(requestDetails.url);
     if (matches) {
         console.log("Match: " + requestDetails.url);
-        FOUND_URLS.add(requestDetails.url);
+        FOUND_URLS[requestDetails.tabId] = requestDetails.url;
+        console.log(FOUND_URLS);
     }
 }
 
 function sendMessageToTabs(tabs) {
-    if (FOUND_URLS.size > 0) {
-        for (let tab of tabs) {
-            browser.tabs.sendMessage(
-                tab.id,
-                { urls: FOUND_URLS }
-            ).then(response => {
-                console.log(`Content Script Msg: ${response.response}`);
-            }).catch(onError);
-        }
-        // clear buffer if its bigger than 5
-        if (FOUND_URLS.size >= 5) {
-            FOUND_URLS.clear()
-        }
+    for (let tab of tabs) {
+        browser.tabs.sendMessage(
+            tab.id,
+            { url: FOUND_URLS[tab.id] }
+        )
+        .then(response =>console.log(`Content Script Msg: ${response.response}`))
+        .catch(onError);
     }
 }
 
